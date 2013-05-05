@@ -1,8 +1,8 @@
 //#define USE_SIMULATION
 
-#include <LiquidCrystal.h>
+//#include <LiquidCrystal.h>
 #include <EEPROM.h>
-#include "AnalogButton_local.h"
+//#include "AnalogButton_local.h"
 #include "PID_v1_local.h"
 #include "EEPROMAnything.h"
 #include "PID_AutoTune_v0_local.h"
@@ -10,7 +10,7 @@
 
 // ***** PIN ASSIGNMENTS *****
 
-const byte buzzerPin = 3;
+//const byte buzzerPin = 3;
 const byte systemLEDPin = A2;
 
 const byte EEPROM_ID = 2; //used to automatically trigger and eeprom reset after firmware update (if necessary)
@@ -29,10 +29,11 @@ byte *mMenu[] = {
   mMain, mDash, mConfig};
 
 byte curMenu=0, mIndex=0, mDrawIndex=0;
-LiquidCrystal lcd(A1, A0, 4, 7, 8, 9);
-AnalogButton button(A3, 0, 253, 454, 657);
+//LiquidCrystal lcd(A1, A0, 4, 7, 8, 9);
+//AnalogButton button(A3, 0, 253, 454, 657);
 
-unsigned long now, lcdTime, buttonTime,ioTime, serialTime;
+//unsigned long now, lcdTime, buttonTime,ioTime, serialTime;
+unsigned long now, ioTime, serialTime;
 boolean sendInfo=true, sendDash=true, sendTune=true, sendInputConfig=true, sendOutputConfig=true;
 
 bool editing=false;
@@ -106,17 +107,17 @@ void DoModel()
 void setup()
 {
   Serial.begin(9600);
-  lcdTime=10;
-  buttonTime=1;
+  //lcdTime=10;
+  //buttonTime=1;
   ioTime=5;
   serialTime=6;
   //windowStartTime=2;
-  lcd.begin(8, 2);
+  //lcd.begin(8, 2);
 
-  lcd.setCursor(0,0);
-  lcd.print(F(" osPID   "));
-  lcd.setCursor(0,1);
-  lcd.print(F(" v1.60   "));
+  //lcd.setCursor(0,0);
+  //lcd.print(F(" osPID   "));
+  //lcd.setCursor(0,1);
+  //lcd.print(F(" v1.60   "));
   delay(1000);
 
   initializeEEPROM();
@@ -142,31 +143,31 @@ void loop()
 {
   now = millis();
 
-  if(now >= buttonTime)
-  {
-    switch(button.get())
-    {
-    case BUTTON_NONE:
-      break;
-
-    case BUTTON_RETURN:
-      back();
-      break;
-
-    case BUTTON_UP:      
-      updown(true);
-      break;
-
-    case BUTTON_DOWN:
-      updown(false);
-      break;
-
-    case BUTTON_OK:
-      ok();
-      break;
-    }
-    buttonTime += 50;
-  }
+//  if(now >= buttonTime)
+//  {
+//    switch(button.get())
+//    {
+//    case BUTTON_NONE:
+//      break;
+//
+//    case BUTTON_RETURN:
+//      back();
+//      break;
+//
+//    case BUTTON_UP:      
+//      updown(true);
+//      break;
+//
+//    case BUTTON_DOWN:
+//      updown(false);
+//      break;
+//
+//    case BUTTON_OK:
+//      ok();
+//      break;
+//    }
+//    buttonTime += 50;
+//  }
 
   bool doIO = now >= ioTime;
   //read in the input
@@ -229,11 +230,11 @@ void loop()
 
   }
 
-  if(now>lcdTime)
-  {
-    drawLCD();
-    lcdTime+=250; 
-  }
+//  if(now>lcdTime)
+//  {
+//    drawLCD();
+//    lcdTime+=250; 
+//  }
   if(millis() > serialTime)
   {
     //if(receivingProfile && (now-profReceiveStart)>profReceiveTimeout) receivingProfile = false;
@@ -244,181 +245,181 @@ void loop()
 }
 
 
-void drawLCD()
-{
-  boolean highlightFirst= (mDrawIndex==mIndex);
-  drawItem(0,highlightFirst, mMenu[curMenu][mDrawIndex]);
-  drawItem(1,!highlightFirst, mMenu[curMenu][mDrawIndex+1]);  
-  if(editing) lcd.setCursor(editDepth, highlightFirst?0:1);
-}
+//void drawLCD()
+//{
+//  boolean highlightFirst= (mDrawIndex==mIndex);
+//  drawItem(0,highlightFirst, mMenu[curMenu][mDrawIndex]);
+//  drawItem(1,!highlightFirst, mMenu[curMenu][mDrawIndex+1]);  
+//  if(editing) lcd.setCursor(editDepth, highlightFirst?0:1);
+//}
 
-void drawItem(byte row, boolean highlight, byte index)
-{
-  char buffer[7];
-  lcd.setCursor(0,row);
-  double val=0;
-  int dec=0;
-  int num=0;
-  char icon=' ';
-  boolean isNeg = false;
-  boolean didneg = false;
-  byte decSpot = 0;
-  boolean edit = editing && highlightedIndex==index;
-  boolean canEdit=!tuning;
-  switch(getMenuType(index))
-  {
-  case TYPE_NAV:
-    lcd.print(highlight? '>':' ');
-    switch(index)
-    {
-    case 0: 
-      lcd.print(F("DashBrd")); 
-      break;
-    case 1: 
-      lcd.print(F("Config ")); 
-      break;
-    case 2: 
-      lcd.print(tuning ? F("Cancel ") : F("ATune  ")); 
-      break;
-    case 3:
-      if(runningProfile)lcd.print(F("Cancel "));
-      else lcd.print(profname);
-      break;
-    default: 
-      return;
-    }
-
-    break;
-  case TYPE_VAL:
-
-    switch(index)
-    {
-    case 4: 
-      val = setpoint; 
-      dec=1; 
-      icon='S'; 
-      break;
-    case 5: 
-      val = input; 
-      dec=1; 
-      icon='I'; 
-      canEdit=false;
-      break;
-    case 6: 
-      val = output; 
-      dec=1; 
-      icon='O'; 
-      canEdit = (modeIndex==0);
-      break;
-    case 8: 
-      val = kp; 
-      dec=2; 
-      icon='P'; 
-      break;
-    case 9: 
-      val = ki; 
-      dec=2; 
-      icon='I'; 
-      break ;
-    case 10: 
-      val = kd; 
-      dec=2; 
-      icon='D'; 
-      break ;
-
-    default: 
-      return;
-    }
-    lcd.print(edit? '[' : (highlight ? (canEdit ? '>':'|') : 
-    ' '));
-    
-    if(isnan(val))
-    { //display an error
-      lcd.print(icon);
-      lcd.print( now % 2000<1000 ? F(" Error"):F("      ")); 
-      return;
-    }
-    
-    for(int i=0;i<dec;i++) val*=10;
-    
-    num = (int)round(val);
-    buffer[0] = icon;
-    isNeg = num<0;
-    if(isNeg) num = 0 - num;
-    didneg = false;
-    decSpot = 6-dec;
-    if(decSpot==6)decSpot=7;
-    for(byte i=6; i>=1;i--)
-    {
-      if(i==decSpot)buffer[i] = '.';
-      else {
-        if(num==0)
-        {
-          if(i>=decSpot-1) buffer[i]='0';
-          else if (isNeg && !didneg)
-          {
-            buffer[i]='-';
-            didneg=true;
-          }
-          else buffer[i]=' ';
-        }
-        else {
-          buffer[i] = num%10+48;
-          num/=10;
-        }
-      }
-    }     
-    lcd.print(buffer);
-    break;
-  case TYPE_OPT: 
-
-    lcd.print(edit ? '[': (highlight? '>':' '));    
-    switch(index)
-    {
-    case 7:    
-      lcd.print(modeIndex==0 ? F("M Man  "):F("M Auto ")); 
-      break;
-    case 11://12: 
-
-      lcd.print(ctrlDirection==0 ? F("A Direc"):F("A Rever")); 
-      break;
-    }
-
-    break;
-  default: 
-    return;
-  }
-
-  //indication of altered state
-  if(highlight && (tuning || runningProfile))
-  {
-    //should we blip?
-    if(tuning)
-    { 
-      if(now % 1500 <500)
-      {
-        lcd.setCursor(0,row);
-        lcd.print('T'); 
-      }
-    }
-    else //running profile
-    {
-      if(now % 2000 < 500)
-      {
-        lcd.setCursor(0,row);
-        lcd.print('P');
-      }
-      else if(now%2000 < 1000)
-      {
-        lcd.setCursor(0,row);
-        char c;
-        if(curProfStep<10) c = curProfStep + 48; //0-9
-        else c = curProfStep + 65; //A,B...
-        lcd.print(c);      
-      }  
-    }
-  }
-}
+//void drawItem(byte row, boolean highlight, byte index)
+//{
+//  char buffer[7];
+//  lcd.setCursor(0,row);
+//  double val=0;
+//  int dec=0;
+//  int num=0;
+//  char icon=' ';
+//  boolean isNeg = false;
+//  boolean didneg = false;
+//  byte decSpot = 0;
+//  boolean edit = editing && highlightedIndex==index;
+//  boolean canEdit=!tuning;
+//  switch(getMenuType(index))
+//  {
+//  case TYPE_NAV:
+//    lcd.print(highlight? '>':' ');
+//    switch(index)
+//    {
+//    case 0: 
+//      lcd.print(F("DashBrd")); 
+//      break;
+//    case 1: 
+//      lcd.print(F("Config ")); 
+//      break;
+//    case 2: 
+//      lcd.print(tuning ? F("Cancel ") : F("ATune  ")); 
+//      break;
+//    case 3:
+//      if(runningProfile)lcd.print(F("Cancel "));
+//      else lcd.print(profname);
+//      break;
+//    default: 
+//      return;
+//    }
+//
+//    break;
+//  case TYPE_VAL:
+//
+//    switch(index)
+//    {
+//    case 4: 
+//      val = setpoint; 
+//      dec=1; 
+//      icon='S'; 
+//      break;
+//    case 5: 
+//      val = input; 
+//      dec=1; 
+//      icon='I'; 
+//      canEdit=false;
+//      break;
+//    case 6: 
+//      val = output; 
+//      dec=1; 
+//      icon='O'; 
+//      canEdit = (modeIndex==0);
+//      break;
+//    case 8: 
+//      val = kp; 
+//      dec=2; 
+//      icon='P'; 
+//      break;
+//    case 9: 
+//      val = ki; 
+//      dec=2; 
+//      icon='I'; 
+//      break ;
+//    case 10: 
+//      val = kd; 
+//      dec=2; 
+//      icon='D'; 
+//      break ;
+//
+//    default: 
+//      return;
+//    }
+//    lcd.print(edit? '[' : (highlight ? (canEdit ? '>':'|') : 
+//    ' '));
+//    
+//    if(isnan(val))
+//    { //display an error
+//      lcd.print(icon);
+//      lcd.print( now % 2000<1000 ? F(" Error"):F("      ")); 
+//      return;
+//    }
+//    
+//    for(int i=0;i<dec;i++) val*=10;
+//    
+//    num = (int)round(val);
+//    buffer[0] = icon;
+//    isNeg = num<0;
+//    if(isNeg) num = 0 - num;
+//    didneg = false;
+//    decSpot = 6-dec;
+//    if(decSpot==6)decSpot=7;
+//    for(byte i=6; i>=1;i--)
+//    {
+//      if(i==decSpot)buffer[i] = '.';
+//      else {
+//        if(num==0)
+//        {
+//          if(i>=decSpot-1) buffer[i]='0';
+//          else if (isNeg && !didneg)
+//          {
+//            buffer[i]='-';
+//            didneg=true;
+//          }
+//          else buffer[i]=' ';
+//        }
+//        else {
+//          buffer[i] = num%10+48;
+//          num/=10;
+//        }
+//      }
+//    }     
+//    lcd.print(buffer);
+//    break;
+//  case TYPE_OPT: 
+//
+//    lcd.print(edit ? '[': (highlight? '>':' '));    
+//    switch(index)
+//    {
+//    case 7:    
+//      lcd.print(modeIndex==0 ? F("M Man  "):F("M Auto ")); 
+//      break;
+//    case 11://12: 
+//
+//      lcd.print(ctrlDirection==0 ? F("A Direc"):F("A Rever")); 
+//      break;
+//    }
+//
+//    break;
+//  default: 
+//    return;
+//  }
+//
+//  //indication of altered state
+//  if(highlight && (tuning || runningProfile))
+//  {
+//    //should we blip?
+//    if(tuning)
+//    { 
+//      if(now % 1500 <500)
+//      {
+//        lcd.setCursor(0,row);
+//        lcd.print('T'); 
+//      }
+//    }
+//    else //running profile
+//    {
+//      if(now % 2000 < 500)
+//      {
+//        lcd.setCursor(0,row);
+//        lcd.print('P');
+//      }
+//      else if(now%2000 < 1000)
+//      {
+//        lcd.setCursor(0,row);
+//        char c;
+//        if(curProfStep<10) c = curProfStep + 48; //0-9
+//        else c = curProfStep + 65; //A,B...
+//        lcd.print(c);      
+//      }  
+//    }
+//  }
+//}
 
 byte getValDec(byte index)
 {       
@@ -463,52 +464,52 @@ byte getMenuType(byte index)
 
 boolean changeflag=false;
 
-void back()
-{
-  if(editing)
-  { //decrease the depth and stop editing if required
-
-    editDepth--;
-    if(getMenuType(highlightedIndex)==TYPE_VAL)
-    {
-      if(editDepth==7-getValDec(highlightedIndex))editDepth--; //skip the decimal  
-    }
-    if(editDepth<3)
-    {
-      editDepth=0;
-      editing= false;
-      lcd.noCursor();
-    }
-  }
-  else
-  { //if not editing return to previous menu. currently this is always main
-
-
-    //depending on which menu we're coming back from, we may need to write to the eeprom
-    if(changeflag)
-    {
-      if(curMenu==1)
-      { 
-        EEPROMBackupDash();
-      }
-      else if(curMenu==2) //tunings may have changed
-      {
-        EEPROMBackupTunings();
-        myPID.SetTunings(kp,ki,kd);
-        myPID.SetControllerDirection(ctrlDirection);
-      }
-      changeflag=false;
-    }
-    if(curMenu!=0)
-    { 
-      highlightedIndex = curMenu-1; //make sure the arrow is on the menu they were in
-      mIndex=curMenu-1;
-      curMenu=0;
-      mDrawIndex=0;
-
-    }
-  }
-}
+//void back()
+//{
+//  if(editing)
+//  { //decrease the depth and stop editing if required
+//
+//    editDepth--;
+//    if(getMenuType(highlightedIndex)==TYPE_VAL)
+//    {
+//      if(editDepth==7-getValDec(highlightedIndex))editDepth--; //skip the decimal  
+//    }
+//    if(editDepth<3)
+//    {
+//      editDepth=0;
+//      editing= false;
+//      lcd.noCursor();
+//    }
+//  }
+//  else
+//  { //if not editing return to previous menu. currently this is always main
+//
+//
+//    //depending on which menu we're coming back from, we may need to write to the eeprom
+//    if(changeflag)
+//    {
+//      if(curMenu==1)
+//      { 
+//        EEPROMBackupDash();
+//      }
+//      else if(curMenu==2) //tunings may have changed
+//      {
+//        EEPROMBackupTunings();
+//        myPID.SetTunings(kp,ki,kd);
+//        myPID.SetControllerDirection(ctrlDirection);
+//      }
+//      changeflag=false;
+//    }
+//    if(curMenu!=0)
+//    { 
+//      highlightedIndex = curMenu-1; //make sure the arrow is on the menu they were in
+//      mIndex=curMenu-1;
+//      curMenu=0;
+//      mDrawIndex=0;
+//
+//    }
+//  }
+//}
 
 
 
@@ -548,157 +549,157 @@ double getValMax(byte index)
 
 }
 
-void updown(bool up)
-{
-
-  if(editing)
-  {
-    changeflag = true;
-    byte decdepth;
-    double adder;
-    switch(getMenuType(highlightedIndex))
-    {
-    case TYPE_VAL:
-      decdepth = 7 - getValDec(highlightedIndex);
-      adder=1;
-      if(editDepth<decdepth-1)for(int i=editDepth;i<decdepth-1;i++)adder*=10;
-      else if(editDepth>decdepth)for(int i=decdepth;i<editDepth;i++)adder/=10;
-
-      if(!up)adder = 0-adder;
-
-      double *val, minimum, maximum;
-      switch(highlightedIndex)
-      {
-      case 4: 
-        val=&setpoint; 
-        break;
-      case 6:  
-        val=&output; 
-        break;
-      case 8:  
-        val=&kp; 
-        break;
-      case 9:  
-        val=&ki; 
-        break;
-      case 10:  
-        val=&kd; 
-        break;
-      }
-      
-      minimum = getValMin(highlightedIndex);
-      maximum = getValMax(highlightedIndex);
-      (*val)+=adder;
-      if((*val)>maximum)(*val)=maximum;
-      else if((*val)<minimum)(*val)=minimum;
-      break; 
-    case TYPE_OPT:
-      switch(highlightedIndex)
-      {
-      case 7:
-        modeIndex= (modeIndex==0?1:0);
-        /*mode change code*/
-        myPID.SetMode(modeIndex);
-        break;
-      case 11://12:
-        ctrlDirection = (ctrlDirection==0?1:0); 
-        Serial.println(ctrlDirection);
-        break;
-      }
-
-      break;
-    }
-
-  }
-  else
-  {
-    if(up)
-    {
-      if(mIndex>0)
-      {
-        mIndex--;
-        mDrawIndex=mIndex;
-      }
-    }
-    else
-    {
-      byte limit = 3;// (curMenu==2 ? 4 : 3); 
-      if(mIndex<limit)
-      {
-        mDrawIndex =mIndex;
-        mIndex++;
-      }
-    }
-    highlightedIndex = mMenu[curMenu][mIndex];
-  }
-}
-
-
-
-
-
-void ok()
-{
-  if(editing)
-  {
-    byte dec = getValDec(highlightedIndex);
-    if(getMenuType(highlightedIndex) == TYPE_VAL &&(editDepth<6 || (editDepth==6 && dec!=1)))
-    {
-      editDepth++;
-      if(editDepth==7-dec)editDepth++; //skip the decimal
-    }
-  }
-  else
-  {
-
-    switch(highlightedIndex)
-    {
-    case 0: 
-      curMenu=1;
-      mDrawIndex=0;
-      mIndex=0; 
-      highlightedIndex = 4; //setpoint
-      changeflag = false;
-      break;
-    case 1: 
-      curMenu=2;
-      mDrawIndex=0;
-      mIndex=0; 
-      highlightedIndex = 8; //kp
-      changeflag = false;
-      break;
-    case 2: 
-      changeAutoTune();/*autotune code*/
-      break;
-    case 3: 
-      if(runningProfile)StopProfile();
-      else StartProfile();
-
-      break;
-    case 5: /*nothing for input*/
-      break;
-    case 6: 
-      if(modeIndex==0 && !tuning) editing=true; 
-      break; //output
-    case 4: //setpoint
-    case 8: //kp
-    case 9: //ki
-    case 10: //kd
-//    case 11: //windowsize
-    case 11: //12: //direction
-      editing=true;
-      break; //verify this is correct
-    case 7: 
-      if(!tuning) editing=true; 
-      break; //mode
-    }
-    if(editing)
-    {
-      editDepth=3;
-      lcd.cursor();
-    }
-  }
-}
+//void updown(bool up)
+//{
+//
+//  if(editing)
+//  {
+//    changeflag = true;
+//    byte decdepth;
+//    double adder;
+//    switch(getMenuType(highlightedIndex))
+//    {
+//    case TYPE_VAL:
+//      decdepth = 7 - getValDec(highlightedIndex);
+//      adder=1;
+//      if(editDepth<decdepth-1)for(int i=editDepth;i<decdepth-1;i++)adder*=10;
+//      else if(editDepth>decdepth)for(int i=decdepth;i<editDepth;i++)adder/=10;
+//
+//      if(!up)adder = 0-adder;
+//
+//      double *val, minimum, maximum;
+//      switch(highlightedIndex)
+//      {
+//      case 4: 
+//        val=&setpoint; 
+//        break;
+//      case 6:  
+//        val=&output; 
+//        break;
+//      case 8:  
+//        val=&kp; 
+//        break;
+//      case 9:  
+//        val=&ki; 
+//        break;
+//      case 10:  
+//        val=&kd; 
+//        break;
+//      }
+//      
+//      minimum = getValMin(highlightedIndex);
+//      maximum = getValMax(highlightedIndex);
+//      (*val)+=adder;
+//      if((*val)>maximum)(*val)=maximum;
+//      else if((*val)<minimum)(*val)=minimum;
+//      break; 
+//    case TYPE_OPT:
+//      switch(highlightedIndex)
+//      {
+//      case 7:
+//        modeIndex= (modeIndex==0?1:0);
+//        /*mode change code*/
+//        myPID.SetMode(modeIndex);
+//        break;
+//      case 11://12:
+//        ctrlDirection = (ctrlDirection==0?1:0); 
+//        Serial.println(ctrlDirection);
+//        break;
+//      }
+//
+//      break;
+//    }
+//
+//  }
+//  else
+//  {
+//    if(up)
+//    {
+//      if(mIndex>0)
+//      {
+//        mIndex--;
+//        mDrawIndex=mIndex;
+//      }
+//    }
+//    else
+//    {
+//      byte limit = 3;// (curMenu==2 ? 4 : 3); 
+//      if(mIndex<limit)
+//      {
+//        mDrawIndex =mIndex;
+//        mIndex++;
+//      }
+//    }
+//    highlightedIndex = mMenu[curMenu][mIndex];
+//  }
+//}
+//
+//
+//
+//
+//
+//void ok()
+//{
+//  if(editing)
+//  {
+//    byte dec = getValDec(highlightedIndex);
+//    if(getMenuType(highlightedIndex) == TYPE_VAL &&(editDepth<6 || (editDepth==6 && dec!=1)))
+//    {
+//      editDepth++;
+//      if(editDepth==7-dec)editDepth++; //skip the decimal
+//    }
+//  }
+//  else
+//  {
+//
+//    switch(highlightedIndex)
+//    {
+//    case 0: 
+//      curMenu=1;
+//      mDrawIndex=0;
+//      mIndex=0; 
+//      highlightedIndex = 4; //setpoint
+//      changeflag = false;
+//      break;
+//    case 1: 
+//      curMenu=2;
+//      mDrawIndex=0;
+//      mIndex=0; 
+//      highlightedIndex = 8; //kp
+//      changeflag = false;
+//      break;
+//    case 2: 
+//      changeAutoTune();/*autotune code*/
+//      break;
+//    case 3: 
+//      if(runningProfile)StopProfile();
+//      else StartProfile();
+//
+//      break;
+//    case 5: /*nothing for input*/
+//      break;
+//    case 6: 
+//      if(modeIndex==0 && !tuning) editing=true; 
+//      break; //output
+//    case 4: //setpoint
+//    case 8: //kp
+//    case 9: //ki
+//    case 10: //kd
+////    case 11: //windowsize
+//    case 11: //12: //direction
+//      editing=true;
+//      break; //verify this is correct
+//    case 7: 
+//      if(!tuning) editing=true; 
+//      break; //mode
+//    }
+//    if(editing)
+//    {
+//      editDepth=3;
+//      lcd.cursor();
+//    }
+//  }
+//}
 
 void changeAutoTune()
 {
@@ -802,15 +803,15 @@ void ProfileRunTime()
 
     if((now-helperTime)>curTime)gotonext=true;
   }
-  else if(curType==127) //buzz
-  {
-    if(now<helperTime)digitalWrite(buzzerPin,HIGH);
-    else 
-    {
-       digitalWrite(buzzerPin,LOW);
-       gotonext=true;
-    }
-  }
+  //else if(curType==127) //buzz
+  //{
+  //  if(now<helperTime)digitalWrite(buzzerPin,HIGH);
+  //  else 
+  //  {
+  //     digitalWrite(buzzerPin,LOW);
+  //     gotonext=true;
+  //  }
+  //}
   else
   { //unrecognized type, kill the profile
     curProfStep=nProfSteps;
@@ -874,7 +875,7 @@ void calcNextProf()
     runningProfile=false;
     curProfStep=0;
     Serial.println("P_DN");
-    digitalWrite(buzzerPin,LOW);
+  //  digitalWrite(buzzerPin,LOW);
   } 
   else
   {
