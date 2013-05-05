@@ -250,7 +250,7 @@ double ReadInputFromCard()
 
 #ifdef PROTOTYPE_INPUT
 /*Include any libraries and/or global variables here*/
-#include <OneWire.h>
+#include "OneWire.h"
 int DS18S20_Pin = 2;                     //DS18S20 Signal pin on digital 2
 //Temperature chip i/o
 OneWire ds(DS18S20_Pin);                  // OneWire Temp Sensor on digital pin 2
@@ -335,12 +335,6 @@ void InputSerialID()
 
 double ReadInputFromCard()
 {
-	return getTemp();
-}
-
-float getTemp(){
-	//returns the temperature from one DS18S20 in DEG Celsius
-
 	byte data[12];
 	byte addr[8];
 
@@ -378,7 +372,7 @@ float getTemp(){
 	byte LSB = data[0];
 
 	float tempRead = ((MSB << 8) | LSB); //using two's compliment
-	float TemperatureSum = tempRead / 16;
+	double TemperatureSum = tempRead / 16;
 	TemperatureSum = (TemperatureSum * 9.0)/ 5.0 + 32.0; // Convert Celsius to Fahrenheit
 	return TemperatureSum;
 }
@@ -474,7 +468,7 @@ void OutputSerialSend()
 #if defined(RICHARD_OUTPUT)
 byte outputType = 1;
 const byte RelayPin = 4;
-const byte SSRPin = 6;
+const byte SSRPin = 4;
 const byte FanPin = 13;
 //unsigned long windowStartTime;
 double outWindowSec = 5.0;
