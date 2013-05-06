@@ -468,7 +468,7 @@ void OutputSerialSend()
 #if defined(RICHARD_OUTPUT)
 byte outputType = 1;
 const byte RelayPin = 4;
-const byte SSRPin = 4;
+const byte SSRPin = 13;
 const byte FanPin = 13;
 //unsigned long windowStartTime;
 double outWindowSec = 5.0;
@@ -516,8 +516,8 @@ void OutputSerialReceiveAfter(int eepromOffset)
 {
 	if(outputType != b1)
 	{
-		if (b1==0)digitalWrite(SSRPin, LOW);
-		else if(b1==1) digitalWrite( RelayPin,LOW); //turn off the other pin
+		if (b1==0)digitalWrite(SSRPin,HIGH);
+		else if(b1==1) digitalWrite( RelayPin,HIGH); //turn off the other pin
 		outputType=b1;
 	}
 	outWindowSec =  serialXfer.asFloat[0];
@@ -540,7 +540,7 @@ void WriteToOutputCard(double value)
 	}*/
 	unsigned long oVal = (unsigned long)(value*(double)WindowSize/ 100.0);
 
-	bool state = (oVal>wind) ? HIGH : LOW;
+	bool state = (oVal>wind) ? LOW : HIGH;
 
 	if(outputType == 0) digitalWrite(RelayPin ,state);
 	else if(outputType == 1) digitalWrite(SSRPin ,state);
